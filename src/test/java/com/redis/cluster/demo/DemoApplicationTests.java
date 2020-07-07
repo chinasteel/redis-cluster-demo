@@ -32,9 +32,15 @@ class DemoApplicationTests {
 
     @Test
     void contextLoads() throws InterruptedException {
+		CountDownLatch mainCountDownLatch = new CountDownLatch(1);
 		CountDownLatch countDownLatch = new CountDownLatch(5000);
 		for (int i = 0; i < 5000; i++) {
 			asyncTaskExecutor.submit(() -> {
+				try {
+					mainCountDownLatch.await();
+				} catch (InterruptedException e) {
+					LOGGER.error(e.getMessage());
+				}
 				Set<String> keys = new HashSet<>();
 				RedisClusterConnection redisClusterConnection = redisConnectionFactory.getClusterConnection();
 				Iterable<RedisClusterNode> redisClusterNodes = redisClusterConnection.clusterGetNodes();
@@ -53,6 +59,7 @@ class DemoApplicationTests {
 				countDownLatch.countDown();
 			});
 		}
+		mainCountDownLatch.countDown();
 		countDownLatch.await();
     }
 
